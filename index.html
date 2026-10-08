@@ -1,0 +1,37 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>불법하도급 교육 평가</title><style>
+body{font-family:system-ui,'Noto Sans KR',sans-serif;background:#f3f5f9;margin:0;color:#222}
+.w{max-width:640px;margin:0 auto;padding:16px}h1{font-size:1.3rem;text-align:center}
+.c{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px #0002}
+input[type=text]{width:100%;box-sizing:border-box;padding:12px;margin:6px 0 12px;border:1px solid #bbb;border-radius:8px;font-size:1rem}
+label.o{display:block;padding:10px;margin:6px 0;border:1px solid #ddd;border-radius:8px;cursor:pointer}
+label.o:has(input:checked){background:#e3edff;border-color:#2f6bff}
+button{width:100%;padding:14px;font-size:1.05rem;border:0;border-radius:10px;background:#2f6bff;color:#fff}
+button:disabled{background:#999}.s{text-align:center;font-size:2rem;font-weight:700;color:#2f6bff}.err{color:#c00}
+</style></head><body><div class="w"><h1>불법하도급의 이해 및 방지 전략<br>교육 평가</h1><div id="app"></div></div>
+<script>
+const app=document.getElementById('app');let Q=[];
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+fetch('/api/questions').then(r=>r.json()).then(q=>{Q=q;render()});
+function render(){
+ app.innerHTML=`<div class="c"><b>참여자 정보</b><br>소속<input type="text" id="org" placeholder="예) ○○건설">성명<input type="text" id="name" placeholder="홍길동"></div>`+
+ Q.map((x,i)=>`<div class="c"><b>Q${i+1}.</b> ${esc(x.q)}`+x.o.map((o,j)=>`<label class="o"><input type="radio" name="q${i}" value="${j}"> ${x.o.length==2&&x.o[0]=='O'?o:(j+1)+'. '+esc(o)}</label>`).join('')+`</div>`).join('')+
+ `<p class="err" id="err"></p><button id="b">제출하기</button>`;
+ document.getElementById('b').onclick=submit;
+}
+async function submit(){
+ const org=document.getElementById('org').value.trim(),name=document.getElementById('name').value.trim(),err=document.getElementById('err');
+ const answers=Q.map((_,i)=>{const c=document.querySelector(`input[name=q${i}]:checked`);return c?+c.value:null});
+ if(!org||!name){err.textContent='소속과 성명을 입력하세요.';return}
+ const miss=answers.findIndex(a=>a===null);
+ if(miss>=0){err.textContent=`${miss+1}번 문제에 답하지 않았습니다.`;return}
+ if(!confirm('제출 후에는 수정할 수 없습니다. 제출할까요?'))return;
+ const b=document.getElementById('b');b.disabled=true;
+ const r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org,name,answers})});
+ const d=await r.json();
+ if(!r.ok){err.textContent=d.error;b.disabled=false;return}
+ app.innerHTML=`<div class="c"><p style="text-align:center">${esc(org)} ${esc(name)}님</p><div class="s">${d.score} / ${d.total}</div><p style="text-align:center">정답 개수</p>
+ <p style="text-align:center">${d.wrong.length?'틀린 문항: '+d.wrong.join(', ')+'번':'만점입니다! 🎉'}</p></div>`;
+ window.scrollTo(0,0);
+}
+</script></body></html>

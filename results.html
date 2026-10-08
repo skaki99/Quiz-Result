@@ -1,0 +1,15 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>제출 현황</title><style>
+body{font-family:system-ui,'Noto Sans KR',sans-serif;margin:0;padding:16px;background:#f3f5f9}
+table{border-collapse:collapse;width:100%;background:#fff}th,td{border:1px solid #ddd;padding:8px;text-align:center}th{background:#2f6bff;color:#fff}
+</style></head><body><h2>제출 현황 <small id="n"></small></h2>
+<table><thead><tr><th>순서</th><th>소속</th><th>성명</th><th>정답 개수</th><th>제출 시각</th></tr></thead><tbody id="t"></tbody></table>
+<script>
+const key=new URLSearchParams(location.search).get('key')||'';
+async function load(){const r=await fetch('/api/results?key='+encodeURIComponent(key));
+ if(!r.ok){document.body.innerHTML='<h3>접근 권한이 없습니다. (?key=관리자키)</h3>';return}
+ const d=await r.json();document.getElementById('n').textContent=`(총 ${d.rows.length}명)`;
+ document.getElementById('t').innerHTML=d.rows.map(x=>`<tr><td>${x.no}</td><td>${esc(x.org)}</td><td>${esc(x.name)}</td><td>${x.score} / ${d.total}</td><td>${new Date(x.at).toLocaleTimeString('ko-KR')}</td></tr>`).join('')}
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+load();setInterval(load,5000);
+</script></body></html>

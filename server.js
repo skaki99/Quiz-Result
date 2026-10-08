@@ -20,6 +20,6 @@ http.createServer((req,res)=>{
   }catch(e){send(res,400,{error:'잘못된 요청'})}});return}
  if(u.pathname==='/api/results'){if(u.searchParams.get('key')!==KEY)return send(res,401,{error:'권한 없음'});return send(res,200,{total:Q.length,rows})}
  const f=u.pathname==='/'?'index.html':u.pathname==='/results'?'results.html':null;
- if(f)return send(res,200,fs.readFileSync(path.join(__dirname,'public',f)),'text/html');
+ if(f){const a=path.join(__dirname,'public',f),b=path.join(__dirname,f);const x=fs.existsSync(a)?a:b;if(!fs.existsSync(x))return send(res,500,{error:f+' 파일을 찾을 수 없습니다'});return send(res,200,fs.readFileSync(x,'utf8'),'text/html')};
  send(res,404,{error:'not found'});
 }).listen(PORT,()=>console.log('http://localhost:'+PORT+'  결과: /results?key='+KEY));
